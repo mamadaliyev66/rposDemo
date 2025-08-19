@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function tenantMatch(tenantId) {
+      return request.auth != null && request.auth.token.tenantId == tenantId;
+    }
+    function userRole() { return request.auth.token.role; }
+
+    match /tenants/{tenantId}/users/{uid} {
+      allow read: if tenantMatch(tenantId);
+      allow write: if tenantMatch(tenantId) && userRole() == 'admin';
+    }
+
+    match /tenants/{tenantId}/menuCategories/{id} {
+      allow read: if tenantMatch(tenantId);
+      allow write: if tenantMatch(tenantId) && userRole() == 'admin';
+    }
+
+    match /tenants/{tenantId}/menuItems/{id} {
+      allow read: if tenantMatch(tenantId);
+      allow write: if tenantMatch(tenantId) && userRole() in ['admin'];
+    }
+
+    match /tenants/{tenantId}/tables/{id} {
+      allow read: if tenantMatch(tenantId);
+      allow write: if tenantMatch(tenantId) && userRole() == 'admin';
+    }
+
+    match /tenants/{tenantId}/orders/{id} {
+      allow read: if tenantMatch(tenantId);
+      allow create: if tenantMatch(tenantId) && userRole() in ['admin','cashier','waiter'];
+      allow update: if tenantMatch(tenantId) && userRole() in ['admin','cashier','waiter','kitchen'];
+    }
+
+    match /tenants/{tenantId}/settings/app {
+      allow read: if tenantMatch(tenantId);
+      allow write: if tenantMatch(tenantId) && userRole() == 'admin';
+    }
+  }
+}
